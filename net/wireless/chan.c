@@ -144,11 +144,15 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 {
 	u32 control_freq;
 
-	if (!chandef->chan)
+	if (!chandef->chan) {
+		pr_err("chandef-valid:  chan is NULL\n");
 		return false;
+	}
 
-	if (chandef->freq1_offset >= 1000)
+	if (chandef->freq1_offset >= 1000) {
+		pr_err("freq1_offset >= 1000: %d\n", chandev->freq1_offset);
 		return false;
+	}
 
 	control_freq = chandef->chan->center_freq;
 
@@ -158,39 +162,64 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 	case NL80211_CHAN_WIDTH_20:
 	case NL80211_CHAN_WIDTH_20_NOHT:
 		if (ieee80211_chandef_to_khz(chandef) !=
-		    ieee80211_channel_to_khz(chandef->chan))
+		    ieee80211_channel_to_khz(chandef->chan)) {
+			pr_err("chandef-valid: 5-20Mhz: khz chandev != chan: %d %d\n",
+			       ieee80211_chandef_to_khz(chandef), ieee80211_channel_to_khz(chandef->chan));
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			pr_err("chandef-valid, 5-20Mhz: center_freq2 is defined: %d\n",
+				chandef->center_freq2);
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_40:
 		if (chandef->center_freq1 != control_freq + 10 &&
-		    chandef->center_freq1 != control_freq - 10)
+		    chandef->center_freq1 != control_freq - 10) {
+			pr_err("chandef-valid: 40Mhz: center-freq1 %d not center of control-freq %d\n",
+			       chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			pr_err("chandef-valid, 40Mhz: center_freq2 is defined: %d\n",
+			       chandef->center_freq2);
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_80P80:
 		if (chandef->center_freq1 != control_freq + 30 &&
 		    chandef->center_freq1 != control_freq + 10 &&
 		    chandef->center_freq1 != control_freq - 10 &&
-		    chandef->center_freq1 != control_freq - 30)
+		    chandef->center_freq1 != control_freq - 30) {
+			pr_err("chandef-valid: 80P80Mhz: center-freq1 %d not center of control-freq %d\n",
+			       chandef->center_freq1, control_freq);
 			return false;
-		if (!chandef->center_freq2)
+		}
+		if (!chandef->center_freq2) {
+			pr_err("chandef-valid: 80P80Mhz: center-freq2 is not defined.\n");
 			return false;
+		}
 		/* adjacent is not allowed -- that's a 160 MHz channel */
 		if (chandef->center_freq1 - chandef->center_freq2 == 80 ||
-		    chandef->center_freq2 - chandef->center_freq1 == 80)
+		    chandef->center_freq2 - chandef->center_freq1 == 80) {
+			pr_err("chandef-valid: 80P80Mhz: Adjacent not allowed, f1: %d f2: %d\n",
+			       chandef->center_freq1, chandef->center_freq2);
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_80:
 		if (chandef->center_freq1 != control_freq + 30 &&
 		    chandef->center_freq1 != control_freq + 10 &&
 		    chandef->center_freq1 != control_freq - 10 &&
-		    chandef->center_freq1 != control_freq - 30)
+		    chandef->center_freq1 != control_freq - 30) {
+			pr_err("chandef-valid: 80Mhz: center-freq1 %d not center of control-freq %d\n",
+			       chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			pr_err("chandef-valid: 80Mhz: center-freq2 not defined.\n");
 			return false;
+		}
 		break;
 	case NL80211_CHAN_WIDTH_160:
 		if (chandef->center_freq1 != control_freq + 70 &&
@@ -200,12 +229,19 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 		    chandef->center_freq1 != control_freq - 10 &&
 		    chandef->center_freq1 != control_freq - 30 &&
 		    chandef->center_freq1 != control_freq - 50 &&
-		    chandef->center_freq1 != control_freq - 70)
+		    chandef->center_freq1 != control_freq - 70) {
+			pr_err("chandef-valid: 160Mhz: center-freq1 %d not center of control-freq %d\n",
+			       chandef->center_freq1, control_freq);
 			return false;
-		if (chandef->center_freq2)
+		}
+		if (chandef->center_freq2) {
+			pr_err("chandef-valid: 160Mhz: center-freq2 not defined.\n");
 			return false;
+		}
 		break;
 	default:
+		pr_err("chandef-valid, unknown width: %d\n",
+		       chandef->width);
 		return false;
 	}
 
