@@ -1109,6 +1109,7 @@ static void __sta_info_destroy_part2(struct sta_info *sta)
 	struct ieee80211_sub_if_data *sdata = sta->sdata;
 	struct station_info *sinfo;
 	int ret;
+	int count = 0;
 
 	/*
 	 * NOTE: This assumes at least synchronize_net() was done
@@ -1121,6 +1122,11 @@ static void __sta_info_destroy_part2(struct sta_info *sta)
 	while (sta->sta_state == IEEE80211_STA_AUTHORIZED) {
 		ret = sta_info_move_state(sta, IEEE80211_STA_ASSOC);
 		WARN_ON_ONCE(ret);
+		if (WARN_ONCE(++count > 1000, "%s: Could not move state after 1000 tries, ret: %d  state: %d\n",
+			      sdata->dev->name, ret, sta->sta_state)) {
+			/* WTF, bail out so that at least we don't hang the system. */
+			break;
+		}
 	}
 
 	/* now keys can no longer be reached */
@@ -2056,8 +2062,19 @@ int sta_info_move_state(struct sta_info *sta,
 	if (test_sta_flag(sta, WLAN_STA_INSERTED)) {
 		int err = drv_sta_state(sta->local, sta->sdata, sta,
 					sta->sta_state, new_state);
-		if (err)
-			return err;
+		if (err == -EIO) {
+			/* Sdata-not-in-driver, we are out of sync, but probably
+			 * best to carry on instead of bailing here, at least maybe
+			 * we can clean this up.
+			 */
+			sdata_err(sta->sdata, "drv_sta_state failed with EIO (sdata not in driver?), state: %d  new-state: %d\n",
+				  sta->sta_state, new_state);
+			WARN_ON_ONCE(1);
+		}
+		else {
+			if (err)
+				return err;
+		}
 	}
 
 	/* reflect the change in all state variables */
