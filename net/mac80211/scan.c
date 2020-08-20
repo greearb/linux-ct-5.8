@@ -322,7 +322,6 @@ ieee80211_prepare_scan_chandef(struct cfg80211_chan_def *chandef,
 static bool ieee80211_prep_hw_scan(struct ieee80211_local *local,
 				   struct ieee80211_sub_if_data *sdata)
 {
-	struct ieee80211_local *local = sdata->local;
 	struct cfg80211_scan_request *req;
 	struct cfg80211_chan_def chandef;
 	u8 bands_used = 0;

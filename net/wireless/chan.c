@@ -166,7 +166,7 @@ bool cfg80211_chandef_valid(const struct cfg80211_chan_def *chandef)
 	}
 
 	if (chandef->freq1_offset >= 1000) {
-		pr_err("freq1_offset >= 1000: %d\n", chandev->freq1_offset);
+		pr_err("freq1_offset >= 1000: %d\n", chandef->freq1_offset);
 		return false;
 	}
 
